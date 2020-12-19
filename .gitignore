@@ -49,11 +49,3 @@ captures/
 # Google Services (e.g. APIs or Firebase)
 # google-services.json
 
-/.gitignore
-/build.gradle
-/gradle.properties
-/gradle/wrapper/gradle-wrapper.jar
-/gradle/wrapper/gradle-wrapper.properties
-/gradlew
-/gradlew.bat
-/settings.gradle
