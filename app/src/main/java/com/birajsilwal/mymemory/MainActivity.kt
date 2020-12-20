@@ -2,20 +2,27 @@ package com.birajsilwal.mymemory
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.TextView
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.birajsilwal.mymemory.models.BoardSize
+import com.birajsilwal.mymemory.models.MemoryCard
+import com.birajsilwal.mymemory.models.MemoryGame
 import com.birajsilwal.mymemory.utils.DEFAULT_ICONS
 
 class MainActivity : AppCompatActivity() {
+
+    companion object {
+        private const val TAG = "MainActivity"
+    }
 
     // lateinit -> late initialization
     private lateinit var rvBoard: RecyclerView
     private lateinit var tvNumMoves: TextView
     private lateinit var tvNumPairs: TextView
 
-    private var boardSize : BoardSize = BoardSize.HARD
+    private var boardSize : BoardSize = BoardSize.EASY
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,14 +31,14 @@ class MainActivity : AppCompatActivity() {
         tvNumMoves = findViewById(R.id.tvNumMoves)
         tvNumPairs = findViewById(R.id.tvNumPairs)
 
-        // shuffle the list and get the number of images
-        // according to the size of the game
-        val chosenImages = DEFAULT_ICONS.shuffled().take(boardSize.getNumPairs())
+        val memoryGame = MemoryGame(boardSize)
 
-        //randomize the chosed images and double that up
-        val randomizedImages = (chosenImages + chosenImages)
-
-        rvBoard.adapter = MemoryBoardAdapter(this, boardSize, randomizedImages)
+        rvBoard.adapter = MemoryBoardAdapter(this, boardSize, memoryGame.cards, object : MemoryBoardAdapter.CardClickListener {
+            override fun onCardClicked(position: Int) {
+                TODO("Not yet implemented")
+                Log.i(TAG, "card clicked $position")
+            }
+        })
         rvBoard.setHasFixedSize(true)
         rvBoard.layoutManager = GridLayoutManager(this, boardSize.getWidth())
     }
