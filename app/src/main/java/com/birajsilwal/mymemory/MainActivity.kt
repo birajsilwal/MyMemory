@@ -4,12 +4,14 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.birajsilwal.mymemory.models.BoardSize
 import com.birajsilwal.mymemory.models.MemoryCard
 import com.birajsilwal.mymemory.models.MemoryGame
 import com.birajsilwal.mymemory.utils.DEFAULT_ICONS
+import com.google.android.material.snackbar.Snackbar
 
 class MainActivity : AppCompatActivity() {
 
@@ -18,6 +20,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     // lateinit -> late initialization
+    private lateinit var clRoot: ConstraintLayout
     private lateinit var rvBoard: RecyclerView
     private lateinit var tvNumMoves: TextView
     private lateinit var tvNumPairs: TextView
@@ -28,6 +31,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        clRoot = findViewById(R.id.clRoot)
         rvBoard = findViewById(R.id.rvBoard)
         tvNumMoves = findViewById(R.id.tvNumMoves)
         tvNumPairs = findViewById(R.id.tvNumPairs)
@@ -49,7 +53,21 @@ class MainActivity : AppCompatActivity() {
      * updating memory game with an attempt
      * flip at given position*/
     private fun updateGameWithFlip(position: Int) {
-        memoryGame.flipCard(position)
+        // Error checking
+        if (memoryGame.haveWonGame()) {
+            // Alert the user of an invalid move
+            Snackbar.make(clRoot, "You already won!", Snackbar.LENGTH_LONG).show()
+            return
+        }
+        if (memoryGame.isCardFaceUp(position)) {
+            // Alert the user of an invalid move
+            Snackbar.make(clRoot, "Invalid move", Snackbar.LENGTH_LONG).show()
+            return
+        }
+        // Actually flip over the card
+        if ( memoryGame.flipCard(position)) {
+            Log.i(TAG, "Found a match! Num pairs found: ${memoryGame.numPairsFound}")
+        }
         adapter.notifyDataSetChanged()
     }
 }
