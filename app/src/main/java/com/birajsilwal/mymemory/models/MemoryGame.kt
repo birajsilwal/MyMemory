@@ -14,10 +14,14 @@ class MemoryGame (private val boardSize : BoardSize ) {
         // shuffle the list and get the number of images
         // according to the size of the game
         val chosenImages = DEFAULT_ICONS.shuffled().take(boardSize.getNumPairs())
-
         //randomize the chosed images and double that up
         val randomizedImages = (chosenImages + chosenImages)
-
         cards = randomizedImages.map { MemoryCard(it) }
+    }
+
+
+    fun flipCard(position: Int) {
+        val card = cards[position]
+        card.isFaceUp = !card.isFaceUp
     }
 }
