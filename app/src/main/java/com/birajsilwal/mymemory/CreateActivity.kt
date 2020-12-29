@@ -26,6 +26,9 @@ import com.birajsilwal.mymemory.utils.BitmapScaler
 import com.birajsilwal.mymemory.utils.EXTRA_BOARD_SIZE
 import com.birajsilwal.mymemory.utils.isPermissionGranted
 import com.birajsilwal.mymemory.utils.requestPermission
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.ktx.storage
 import java.io.ByteArrayOutputStream
 
 /*This is where user can create there own board*/
@@ -50,6 +53,8 @@ class CreateActivity : AppCompatActivity() {
     private lateinit var boardSize: BoardSize
     private var numImagesRequired = -1
     private val chosenImageUris = mutableListOf<Uri>()
+    private val storage = Firebase.storage
+    private val db = Firebase.firestore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -172,11 +177,44 @@ class CreateActivity : AppCompatActivity() {
     }
 
     private fun saveDataToFireBase() {
+        val customGameName = etGameName.text.toString()
         Log.i(TAG, "save data to firebase")
+        var didEncounterError = false
+        val uploadedImageUrls = mutableListOf<String>()
         for ((index, photoUri) in chosenImageUris.withIndex()) {
             // we are going to store image byte array into the database
             val imageByteArray = getImageByteArray(photoUri)
+            val filePath = "images/$customGameName/${System.currentTimeMillis()}-${index}.jpg"
+            val photoReference  = storage.reference.child(filePath)
+            photoReference.putBytes(imageByteArray)
+                .continueWithTask { photoUploadTask ->
+                    Log.i(TAG, "uploaded bytes: ${photoUploadTask.result?.bytesTransferred}")
+                    photoReference.downloadUrl
+                }.addOnCompleteListener { downloadUrlTask ->
+                    if (!downloadUrlTask.isSuccessful) {
+                        Log.e(TAG, "Exception with Firebase storage", downloadUrlTask.exception)
+                        Toast.makeText(this, "Failed to upload image", Toast.LENGTH_SHORT).show()
+                        didEncounterError = true
+                        return@addOnCompleteListener
+                    }
+                    if (didEncounterError) {
+                        return@addOnCompleteListener
+                    }
+                    val downloadUrl = downloadUrlTask.result.toString()
+                    uploadedImageUrls.add(downloadUrl)
+                    Log.i(TAG, "Finished uploading $photoUri, Num uploaded: ${uploadedImageUrls.size}")
+                    if (uploadedImageUrls.size == chosenImageUris.size) {
+                        handleAllImagesUploaded(customGameName, uploadedImageUrls)
+                    }
+                }
         }
+    }
+
+    private fun handleAllImagesUploaded(
+        customGameName: String,
+        uploadedImageUrls: MutableList<String>
+    ) {
+
     }
 
     // this function gets the original image and scales it down
