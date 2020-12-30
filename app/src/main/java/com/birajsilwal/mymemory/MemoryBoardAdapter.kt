@@ -66,6 +66,7 @@ class MemoryBoardAdapter(
                     imageButton.setImageResource(memoryCard.identifier)
                 }
             } else {
+                // change this background
                 imageButton.setImageResource(R.drawable.ic_launcher_background)
             }
 

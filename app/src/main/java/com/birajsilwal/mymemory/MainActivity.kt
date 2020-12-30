@@ -3,6 +3,7 @@ package com.birajsilwal.mymemory
 import android.animation.ArgbEvaluator
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -24,6 +25,7 @@ import com.birajsilwal.mymemory.models.MemoryGame
 import com.birajsilwal.mymemory.models.UserImageList
 import com.birajsilwal.mymemory.utils.EXTRA_BOARD_SIZE
 import com.birajsilwal.mymemory.utils.EXTRA_GAME_NAME
+import com.github.jinatonic.confetti.CommonConfetti
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -87,6 +89,7 @@ class MainActivity : AppCompatActivity() {
             }
             R.id.mi_Download -> {
                 showDownloadDialog()
+                return true
             }
         }
         return super.onOptionsItemSelected(item)
@@ -252,6 +255,7 @@ class MainActivity : AppCompatActivity() {
             tvNumPairs.text = "Pairs: ${memoryGame.numPairsFound} / ${boardSize.getNumPairs()}"
             if (memoryGame.haveWonGame()) {
                 Snackbar.make(clRoot, "You won! Congratulations", Snackbar.LENGTH_LONG).show()
+                CommonConfetti.rainingConfetti(clRoot, intArrayOf(Color.YELLOW, Color.GREEN, Color.MAGENTA)).oneShot()
             }
         }
         tvNumMoves.text = "Moves: ${memoryGame.getNumMoves()}"
