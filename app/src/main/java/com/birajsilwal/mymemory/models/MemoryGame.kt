@@ -5,7 +5,9 @@ import com.birajsilwal.mymemory.utils.DEFAULT_ICONS
 /*this class encapsulates logic for the memory game,
 * takes board size and creates images
 * according to the board size*/
-class MemoryGame (private val boardSize : BoardSize ) {
+class MemoryGame(
+        private val boardSize: BoardSize,
+        private val customImages: List<String>?) {
 
     val cards : List<MemoryCard>
     var numPairsFound = 0
@@ -14,12 +16,17 @@ class MemoryGame (private val boardSize : BoardSize ) {
     private var indexOfSingleSelectedCard : Int? = null
 
     init {
-        // shuffle the list and get the number of images
-        // according to the size of the game
-        val chosenImages = DEFAULT_ICONS.shuffled().take(boardSize.getNumPairs())
-        //randomize the chose images and double that up
-        val randomizedImages = (chosenImages + chosenImages).shuffled()
-        cards = randomizedImages.map { MemoryCard(it) }
+        if (customImages == null) {
+            // shuffle the list and get the number of images
+            // according to the size of the game
+            val chosenImages = DEFAULT_ICONS.shuffled().take(boardSize.getNumPairs())
+            //randomize the chose images and double that up
+            val randomizedImages = (chosenImages + chosenImages).shuffled()
+            cards = randomizedImages.map { MemoryCard(it) }
+        } else {
+            val randomizedImages = (customImages + customImages).shuffled()
+            cards = randomizedImages.map { MemoryCard(it.hashCode(), it) }
+        }
     }
 
 

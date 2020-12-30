@@ -1,10 +1,10 @@
 package com.birajsilwal.mymemory
 
 import android.animation.ArgbEvaluator
+import android.app.Activity
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.text.Layout
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
@@ -19,8 +19,12 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.birajsilwal.mymemory.models.BoardSize
 import com.birajsilwal.mymemory.models.MemoryGame
+import com.birajsilwal.mymemory.models.UserImageList
 import com.birajsilwal.mymemory.utils.EXTRA_BOARD_SIZE
+import com.birajsilwal.mymemory.utils.EXTRA_GAME_NAME
 import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 
 class MainActivity : AppCompatActivity() {
 
@@ -37,6 +41,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvNumPairs: TextView
     private lateinit var memoryGame: MemoryGame
     private lateinit var adapter: MemoryBoardAdapter
+    private val db = Firebase.firestore
+    private var gameName: String? = null
+    private var customGameImages: List<String>? = null
     private var boardSize : BoardSize = BoardSize.EASY
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -79,6 +86,38 @@ class MainActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item)
     }
 
+    // get the result from create activity
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == CREATE_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+            val customGameName = data?.getStringExtra(EXTRA_GAME_NAME)
+            if (customGameName == null) {
+                Log.e(TAG, "Got null custom game from CreateActivity")
+                return
+            }
+            downloadGame(customGameName)
+        }
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    private fun downloadGame(customGameName: String) {
+        db.collection("games").document(customGameName).get().addOnSuccessListener { document ->
+            val userImageList = document.toObject(UserImageList::class.java)
+            if (userImageList?.images == null)   {
+                Log.e(TAG, "Invalid custom game data from Firebase")
+                Snackbar.make(clRoot, "Sorry, we couldn't find any such game, '$customGameName'", Snackbar.LENGTH_LONG).show()
+                return@addOnSuccessListener
+            }
+            val numCards = userImageList.images.size * 2
+            boardSize = BoardSize.getByValue(numCards)
+            customGameImages = userImageList.images
+            gameName = customGameName
+            Snackbar.make(clRoot, "You're now playing '$customGameName'!", Snackbar.LENGTH_LONG).show()
+            setupBoard()
+        }.addOnFailureListener { exception ->
+            Log.e(TAG, "Exception when retrieving game", exception)
+        }
+    }
+
     private fun showCreationDialog() {
         val boardSizeView = LayoutInflater.from(this).inflate(R.layout.dialog_board_size, null)
         val radioGroupSize = boardSizeView.findViewById<RadioGroup>(R.id.radioGroup)
@@ -112,6 +151,8 @@ class MainActivity : AppCompatActivity() {
                 R.id.rbMedium -> BoardSize.MEDIUM
                 else -> BoardSize.HARD
             }
+            gameName = null
+            customGameImages = null
             setupBoard()
         })
     }
@@ -128,6 +169,8 @@ class MainActivity : AppCompatActivity() {
 
     /*This method is to setup the board*/
     private fun setupBoard() {
+        // change the title according to game name
+        supportActionBar?.title = gameName ?: getString(R.string.app_name)
         // resetting text view according to the board size
         when (boardSize) {
             BoardSize.EASY -> {
@@ -145,7 +188,7 @@ class MainActivity : AppCompatActivity() {
         }
         // initial color is red, it will turn to color full (green) as user progress the game
         tvNumPairs.setTextColor(ContextCompat.getColor(this, R.color.color_progress_none))
-        memoryGame = MemoryGame(boardSize)
+        memoryGame = MemoryGame(boardSize, customGameImages)
         adapter = MemoryBoardAdapter(this, boardSize, memoryGame.cards,
                 object : MemoryBoardAdapter.CardClickListener {
                     override fun onCardClicked(position: Int) {
