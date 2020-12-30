@@ -16,16 +16,16 @@ import android.text.InputFilter
 import android.text.TextWatcher
 import android.util.Log
 import android.view.MenuItem
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ProgressBar
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.birajsilwal.mymemory.models.BoardSize
-import com.birajsilwal.mymemory.utils.BitmapScaler
-import com.birajsilwal.mymemory.utils.EXTRA_BOARD_SIZE
-import com.birajsilwal.mymemory.utils.isPermissionGranted
-import com.birajsilwal.mymemory.utils.requestPermission
+import com.birajsilwal.mymemory.utils.*
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
@@ -48,6 +48,7 @@ class CreateActivity : AppCompatActivity() {
     private lateinit var rvImagePicker: RecyclerView
     private lateinit var etGameName: EditText
     private lateinit var btnSave: Button
+    private lateinit var pbUploading: ProgressBar
 
     private lateinit var adapter: ImagePickerAdapter
     private lateinit var boardSize: BoardSize
@@ -63,6 +64,7 @@ class CreateActivity : AppCompatActivity() {
         rvImagePicker = findViewById(R.id.rvImagePicker)
         etGameName = findViewById(R.id.etGameName)
         btnSave = findViewById(R.id.btnSave)
+        pbUploading = findViewById(R.id.pbUploading)
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         boardSize = intent.getSerializableExtra(EXTRA_BOARD_SIZE) as BoardSize
@@ -136,7 +138,7 @@ class CreateActivity : AppCompatActivity() {
             Log.w(TAG, "Did not get data back from the launched activity, user likely canceled flow")
             return
         }
-        val seletedUri: Uri? = data.data
+        val selectedUri: Uri? = data.data
         val clipData: ClipData? = data.clipData
         if (clipData != null) {
             Log.i(TAG, "clip data num images ${clipData.itemCount}: $clipData")
@@ -146,9 +148,9 @@ class CreateActivity : AppCompatActivity() {
                     chosenImageUris.add(clipItem.uri)
                 }
             }
-        } else if (seletedUri != null) {
-            Log.i(TAG, "data: $seletedUri")
-            chosenImageUris.add(seletedUri)
+        } else if (selectedUri != null) {
+            Log.i(TAG, "data: $selectedUri")
+            chosenImageUris.add(selectedUri)
         }
         adapter.notifyDataSetChanged()
         supportActionBar?.title = "Chose pics (${chosenImageUris.size} / $numImagesRequired)"
@@ -177,14 +179,38 @@ class CreateActivity : AppCompatActivity() {
     }
 
     private fun saveDataToFireBase() {
+        btnSave.isEnabled = false
         val customGameName = etGameName.text.toString()
         Log.i(TAG, "save data to firebase")
+        db.collection("games").document(customGameName).get().addOnSuccessListener { document ->
+            // if the game name already exists, we should not let new user to create another game
+            // with same name
+            if (document != null && document.data != null) {
+                AlertDialog.Builder(this)
+                    .setTitle("Name taken")
+                    .setMessage("A game already exists with the name '$customGameName'. Please choose another")
+                    .setPositiveButton("OK", null)
+                    .show()
+            } else {
+                handleImageUploading(customGameName)
+            }
+        }.addOnFailureListener { exception ->
+            Log.e(TAG, "Encountered error while saving memory game", exception)
+            Toast.makeText(this, "Encountered error while saving memory game", Toast.LENGTH_SHORT).show()
+            btnSave.isEnabled = true
+        }
+    }
+
+    private fun handleImageUploading(gameName: String) {
+        // when the user click s the save button, make the
+        // progress bar visible
+        pbUploading.visibility = View.VISIBLE
         var didEncounterError = false
         val uploadedImageUrls = mutableListOf<String>()
         for ((index, photoUri) in chosenImageUris.withIndex()) {
             // we are going to store image byte array into the database
             val imageByteArray = getImageByteArray(photoUri)
-            val filePath = "images/$customGameName/${System.currentTimeMillis()}-${index}.jpg"
+            val filePath = "images/$gameName/${System.currentTimeMillis()}-${index}.jpg"
             val photoReference  = storage.reference.child(filePath)
             photoReference.putBytes(imageByteArray)
                 .continueWithTask { photoUploadTask ->
@@ -198,23 +224,41 @@ class CreateActivity : AppCompatActivity() {
                         return@addOnCompleteListener
                     }
                     if (didEncounterError) {
+                        // but if there is an error, make the visibility gone
+                        pbUploading.visibility = View.GONE
                         return@addOnCompleteListener
                     }
                     val downloadUrl = downloadUrlTask.result.toString()
                     uploadedImageUrls.add(downloadUrl)
+                    pbUploading.progress = uploadedImageUrls.size * 100 / chosenImageUris.size
                     Log.i(TAG, "Finished uploading $photoUri, Num uploaded: ${uploadedImageUrls.size}")
                     if (uploadedImageUrls.size == chosenImageUris.size) {
-                        handleAllImagesUploaded(customGameName, uploadedImageUrls)
+                        handleAllImagesUploaded(gameName, uploadedImageUrls)
                     }
                 }
         }
     }
 
-    private fun handleAllImagesUploaded(
-        customGameName: String,
-        uploadedImageUrls: MutableList<String>
-    ) {
-
+    private fun handleAllImagesUploaded( gameName: String, imageUrls: MutableList<String> ) {
+        db.collection("games").document(gameName)
+            .set(mapOf("images" to imageUrls))
+            .addOnCompleteListener { gameCreationTask ->
+                pbUploading.visibility = View.GONE
+                if (!gameCreationTask.isSuccessful) {
+                    Log.e(TAG, "Exception with game creation", gameCreationTask.exception)
+                    Toast.makeText(this, "Failed game creation", Toast.LENGTH_SHORT).show()
+                    return@addOnCompleteListener
+                }
+                Log.i(TAG, "Successfully created game $gameName")
+                AlertDialog.Builder(this)
+                    .setTitle("Upload complete! Let's play your game '$gameName'")
+                    .setPositiveButton("OK") { _, _ ->
+                        val resultData = Intent()
+                        resultData.putExtra(EXTRA_GAME_NAME, gameName)
+                        setResult(Activity.RESULT_OK, resultData)
+                        finish()
+                    }.show()
+            }
     }
 
     // this function gets the original image and scales it down
