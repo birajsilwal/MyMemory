@@ -3,7 +3,9 @@
 ### App Walkthough GIF
 <img src="https://github.com/birajsilwal/MyMemory/blob/master/app.gif" width=300><br>
 
-## Objective of the game is to try and find pairs with matching images.
+### Objective of the game is to try and find pairs with matching images.
+
+### Tasks
 
 - Customized UI views using dynamic and responsive layouts, styles, and animations.
 - Used Firebase cloud storage to store user upload images.
