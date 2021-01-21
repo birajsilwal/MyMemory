@@ -45,7 +45,7 @@ class MemoryGame(
         }
         else {
             //exactly 1 card previously flipped over
-            foundMatch = checkForMatch(indexOfSingleSelectedCard !!, position)
+            foundMatch = checkForMatch(indexOfSingleSelectedCard!!, position)
             indexOfSingleSelectedCard = null
         }
         card.isFaceUp = !card.isFaceUp

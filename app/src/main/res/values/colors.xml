@@ -11,7 +11,15 @@
     <color name="color_progress_none">#DC1E0B</color>
     <color name="color_progress_full">#35BA01</color>
 
-    <color name="green_dark">#115259</color>
-    <color name="green_darkest">#092B2F</color>
-    <color name="green_blue">#428D97</color>
+    <color name="blue">#005ABA</color>
+    <color name="blue_darkest">#005ABA</color>
+    <color name="green_blue">#007AFF</color>
+    <color name="blue_idk">#5050D9</color>
+
+    <color name="g_blue_top">#2A2A72</color>
+    <color name="g_blue_end">#BD009FFD</color>
+
+    <color name="button_blue1">#2234AE</color>
+
+
 </resources>

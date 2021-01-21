@@ -15,7 +15,6 @@ import android.widget.EditText
 import android.widget.RadioGroup
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
@@ -59,6 +58,8 @@ class MainActivity : AppCompatActivity() {
         tvNumMoves = findViewById(R.id.tvNumMoves)
         tvNumPairs = findViewById(R.id.tvNumPairs)
 
+        boardSize = intent.getSerializableExtra((EXTRA_BOARD_SIZE)) as BoardSize
+
         setupBoard()
     }
 
@@ -78,6 +79,11 @@ class MainActivity : AppCompatActivity() {
                     // setup the game again
                     setupBoard()
                 }
+                return true
+            }
+            R.id.mi_home -> {
+                val intent = Intent(this, WelcomeActivity::class.java)
+                startActivity(intent)
             }
             R.id.mi_new_size -> {
                 showNewSizeDialog()

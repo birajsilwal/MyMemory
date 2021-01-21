@@ -1,7 +1,7 @@
 package com.birajsilwal.mymemory
 
+import android.Manifest
 import android.app.Activity
-import android.content.ClipData
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -79,12 +79,12 @@ class CreateActivity : AppCompatActivity() {
         // create toast if text is > 14
         etGameName.filters = arrayOf(InputFilter.LengthFilter(Max_GAME_NAME_LENGTH))
         etGameName.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-                btnSave.isEnabled = shouldEnableSaveButton()
-            }
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {}
+            override fun afterTextChanged(s: Editable?) {
+                btnSave.isEnabled = shouldEnableSaveButton()
+            }
 
         })
 
@@ -138,8 +138,8 @@ class CreateActivity : AppCompatActivity() {
             Log.w(TAG, "Did not get data back from the launched activity, user likely canceled flow")
             return
         }
-        val selectedUri: Uri? = data.data
-        val clipData: ClipData? = data.clipData
+        val selectedUri = data.data
+        val clipData = data.clipData
         if (clipData != null) {
             Log.i(TAG, "clip data num images ${clipData.itemCount}: $clipData")
             for (i in 0 until clipData.itemCount) {
