@@ -2,7 +2,7 @@
 
 ### App Walkthough GIF
 
-<img src="" width=400><br>
+<img src="https://github.com/birajsilwal/MyMemory/blob/master/screenshot_mymemory.mp4" width=300><br>
 
 ##Objective of the game is to try and find pairs with matching images.
 
